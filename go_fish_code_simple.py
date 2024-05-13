@@ -9,7 +9,7 @@ Will probably transform this into a Class. All functions are using the imagecube
 too many repeated patterns.
 """
 
-def plot_image(inclination,PA,FOV,X_offsec,Y_offset):
+def plot_image(inclination,PA,FOV,X_offset,Y_offset):
     '''
     Plot image and grid to see if there is consistency
     in the chosen inclination, PA, and centering.
@@ -19,7 +19,7 @@ def plot_image(inclination,PA,FOV,X_offsec,Y_offset):
 
     ## define the plot parameters
     fig, ax = plt.subplots()
-    cube.plot_surface(x0=X_offsec, y0=Y_offset,inc=inclination, PA=PA,
+    cube.plot_surface(x0=X_offset, y0=Y_offset,inc=inclination, PA=PA,
                             r_max=1.0, fill='rvals * np.cos(tvals)', return_fig=True,ax=ax)
     im = ax.imshow(cube.data, origin='lower', extent=cube.extent)
 
@@ -29,17 +29,17 @@ def plot_image(inclination,PA,FOV,X_offsec,Y_offset):
     ax.set_ylabel('Offset (arcsec)')
     plt.show()
 
-def flux_integration(inclination,PA,FOV,X_offsec,Y_offset):
+def flux_integration(inclination,PA,FOV,X_offset,Y_offset):
     '''
     integration -> need to re-define.
     '''
 
     cube = imagecube(os.path.join(path,file), FOV) # This defines the imagecube object from GoFish
-    x, y, dy = cube.radial_profile(x0=X_offsec,y0=Y_offset,inc=inclination, PA=PA,  dist=132, unit='Jy/beam')
+    x, y, dy = cube.radial_profile(x0=X_offset,y0=Y_offset,inc=inclination, PA=PA,  dist=132, unit='Jy/beam')
 
     total_integral = integrate.simpson(y, x)
-    print(total_integral)
-
+    print('total integrated flux in the average profile', round(total_integral,5))
+    print(len(x))
     integration_array=[]
     for ii in range(len(x)-2):
         current_integral = integrate.simpson(y[0:ii+2], x[0:ii+2])
@@ -50,14 +50,12 @@ def flux_integration(inclination,PA,FOV,X_offsec,Y_offset):
                   +'% of total flux')
 
 
-def radial_cut(inclination,PA,FOV,X_offsec,Y_offset,plot=False):
+def radial_cut(inclination,PA,FOV,X_offset,Y_offset,plot=False):
     '''
     Obtain and plot radial profiles
     '''
     cube = imagecube(os.path.join(path,file), FOV) # This defines the imagecube object from GoFish
-    x, y, dy = cube.radial_profile(x0=X_offsec,y0=Y_offset,inc=inclination, PA=PA,  dist=132, unit='Jy/beam')
-
-
+    x, y, dy = cube.radial_profile(x0=X_offset,y0=Y_offset,inc=inclination, PA=PA,  dist=132, unit='Jy/beam')
 
     """
     plot
@@ -73,13 +71,13 @@ def radial_cut(inclination,PA,FOV,X_offsec,Y_offset,plot=False):
 
     return x,y,dy
 
-def plot_flux_distribution(inclination,PA,FOV):
+def plot_flux_distribution(inclination,PA,FOV,X_offset,Y_offset):
     '''
     CDF of the flux
     '''
     cube = imagecube(os.path.join(path,file), FOV) # This defines the imagecube object from GoFish
     fig, ax = plt.subplots()
-    x, y, dy = cube.radial_profile(inc=inclination, PA=PA, mstar=0.5, dist=132, unit='Jy/beam')
+    x, y, dy = cube.radial_profile(x0=X_offset,y0=Y_offset,inc=inclination, PA=PA, mstar=0.5, dist=132, unit='Jy/beam')
 
     # plot the cumulative histogram
     n_bins=500
@@ -101,8 +99,8 @@ if __name__ == "__main__":
     inclination=47
     PA=149
     FOV=5.0
-    X_offsec,Y_offset = -0.006, -0.013
+    X_offset,Y_offset = -0.006, -0.013
     # plot_image(inclination,PA,FOV,X_offsec,Y_offset)
     # radial_cut(inclination, PA,FOV,X_offsec,Y_offset, plot=True)
-    flux_integration(inclination, PA, FOV, X_offsec, Y_offset)
-    # plot_flux_distribution(inclination, PA,FOV)
+    # flux_integration(inclination, PA, FOV, X_offsec, Y_offset)
+    plot_flux_distribution(inclination, PA,FOV,X_offset,Y_offset)
