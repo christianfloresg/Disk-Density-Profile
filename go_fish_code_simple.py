@@ -4,8 +4,12 @@ import numpy as np
 import os
 from scipy import integrate
 
+"""
+Will probably transform this into a Class. All functions are using the imagecube thing and 
+too many repeated patterns.
+"""
 
-def plot_image(inclination,PA,FOV):
+def plot_image(inclination,PA,FOV,X_offsec,Y_offset):
     '''
     Plot image and grid to see if there is consistency
     in the chosen inclination, PA, and centering.
@@ -15,7 +19,7 @@ def plot_image(inclination,PA,FOV):
 
     ## define the plot parameters
     fig, ax = plt.subplots()
-    cube.plot_surface(x0=-0.006, y0=-0.013,inc=inclination, PA=PA,
+    cube.plot_surface(x0=X_offsec, y0=Y_offset,inc=inclination, PA=PA,
                             r_max=1.0, fill='rvals * np.cos(tvals)', return_fig=True,ax=ax)
     im = ax.imshow(cube.data, origin='lower', extent=cube.extent)
 
@@ -25,26 +29,35 @@ def plot_image(inclination,PA,FOV):
     ax.set_ylabel('Offset (arcsec)')
     plt.show()
 
-def radial_cut(inclination,PA,FOV,plot=False):
+def flux_integration(inclination,PA,FOV,X_offsec,Y_offset):
+    '''
+    integration -> need to re-define.
+    '''
+
+    cube = imagecube(os.path.join(path,file), FOV) # This defines the imagecube object from GoFish
+    x, y, dy = cube.radial_profile(x0=X_offsec,y0=Y_offset,inc=inclination, PA=PA,  dist=132, unit='Jy/beam')
+
+    total_integral = integrate.simpson(y, x)
+    print(total_integral)
+
+    integration_array=[]
+    for ii in range(len(x)-2):
+        current_integral = integrate.simpson(y[0:ii+2], x[0:ii+2])
+        integration_array.append(current_integral)
+        # print(current_integral/total_integral*100,x[ii+2])
+        if 67<current_integral/total_integral*100<68:
+            print(str(round(x[ii+2],3))+' is the radius at '+str(round(current_integral/total_integral*100,3))
+                  +'% of total flux')
+
+
+def radial_cut(inclination,PA,FOV,X_offsec,Y_offset,plot=False):
     '''
     Obtain and plot radial profiles
     '''
     cube = imagecube(os.path.join(path,file), FOV) # This defines the imagecube object from GoFish
-    x, y, dy = cube.radial_profile(x0=-0.006,y0=-0.013,inc=inclination, PA=PA,  dist=132, unit='Jy/beam')
-    '''
-    integration
-    '''
-    # total_integral = integrate.simpson(y, x)
-    # print(total_integral)
+    x, y, dy = cube.radial_profile(x0=X_offsec,y0=Y_offset,inc=inclination, PA=PA,  dist=132, unit='Jy/beam')
 
-    # integration_array=[]
-    # for ii in range(len(x)-2):
-    #     current_integral = integrate.simpson(y[0:ii+2], x[0:ii+2])
-    #     integration_array.append(current_integral)
-    #     # print(current_integral/total_integral*100,x[ii+2])
-    #     if 67<current_integral/total_integral*100<68:
-    #         print(str(round(x[ii+2],3))+' is the radius at '+str(round(current_integral/total_integral*100,3))
-    #               +'% of total flux')
+
 
     """
     plot
@@ -88,7 +101,8 @@ if __name__ == "__main__":
     inclination=47
     PA=149
     FOV=5.0
-
-    plot_image(inclination,PA,FOV)
-    radial_cut(inclination, PA,FOV, plot=True)
-    plot_flux_distribution(inclination, PA,FOV)
+    X_offsec,Y_offset = -0.006, -0.013
+    # plot_image(inclination,PA,FOV,X_offsec,Y_offset)
+    # radial_cut(inclination, PA,FOV,X_offsec,Y_offset, plot=True)
+    flux_integration(inclination, PA, FOV, X_offsec, Y_offset)
+    # plot_flux_distribution(inclination, PA,FOV)
